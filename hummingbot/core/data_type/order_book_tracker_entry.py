@@ -2,6 +2,7 @@
 
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.market.bittrex.bittrex_active_order_tracker import BittrexActiveOrderTracker
+from hummingbot.market.dranite.dranite_active_order_tracker import DraniteActiveOrderTracker
 from hummingbot.market.coinbase_pro.coinbase_pro_active_order_tracker import CoinbaseProActiveOrderTracker
 from hummingbot.market.ddex.ddex_active_order_tracker import DDEXActiveOrderTracker
 from hummingbot.market.idex.idex_active_order_tracker import IDEXActiveOrderTracker
@@ -156,4 +157,22 @@ class BittrexOrderBookTrackerEntry(OrderBookTrackerEntry):
 
     @property
     def active_order_tracker(self) -> BittrexActiveOrderTracker:
+        return self._active_order_tracker
+
+
+class DraniteOrderBookTrackerEntry(OrderBookTrackerEntry):
+    def __init__(
+        self, symbol: str, timestamp: float, order_book: OrderBook, active_order_tracker: DraniteActiveOrderTracker
+    ):
+        self._active_order_tracker = active_order_tracker
+        super(DraniteOrderBookTrackerEntry, self).__init__(symbol, timestamp, order_book)
+
+    def __repr__(self) -> str:
+        return (
+            f"DraniteOrderBookTrackerEntry(symbol='{self._symbol}', timestamp='{self._timestamp}', "
+            f"order_book='{self._order_book}')"
+        )
+
+    @property
+    def active_order_tracker(self) -> DraniteActiveOrderTracker:
         return self._active_order_tracker
