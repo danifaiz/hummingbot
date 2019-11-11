@@ -14,6 +14,7 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.logger.application_warning import ApplicationWarning
 from hummingbot.market.binance.binance_market import BinanceMarket
 from hummingbot.market.bittrex.bittrex_market import BittrexMarket
+from hummingbot.market.dranite.dranite_market import DraniteMarket
 from hummingbot.market.coinbase_pro.coinbase_pro_market import CoinbaseProMarket
 from hummingbot.market.ddex.ddex_market import DDEXMarket
 from hummingbot.market.huobi.huobi_market import HuobiMarket
@@ -60,7 +61,8 @@ MARKET_CLASSES = {
     "idex": IDEXMarket,
     "radar_relay": RadarRelayMarket,
     "dolomite": DolomiteMarket,
-    "bittrex": BittrexMarket
+    "bittrex": BittrexMarket,
+    "dranite": DraniteMarket
 }
 
 
@@ -334,6 +336,14 @@ class HummingbotApplication(*commands):
                 bittrex_secret_key = global_config_map.get("bittrex_secret_key").value
                 market = BittrexMarket(bittrex_api_key,
                                        bittrex_secret_key,
+                                       order_book_tracker_data_source_type=OrderBookTrackerDataSourceType.EXCHANGE_API,
+                                       symbols=symbols,
+                                       trading_required=self._trading_required)
+            elif market_name == "dranite":
+                dranite_api_key = global_config_map.get("dranite_api_key").value
+                dranite_secret_key = global_config_map.get("dranite_secret_key").value
+                market = DraniteMarket(dranite_api_key,
+                                       dranite_secret_key,
                                        order_book_tracker_data_source_type=OrderBookTrackerDataSourceType.EXCHANGE_API,
                                        symbols=symbols,
                                        trading_required=self._trading_required)

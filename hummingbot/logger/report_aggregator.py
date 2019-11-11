@@ -11,6 +11,7 @@ from hummingbot.core.utils.exchange_rate_conversion import ExchangeRateConversio
 from hummingbot.market.bamboo_relay.bamboo_relay_market import BambooRelayMarket
 from hummingbot.market.binance.binance_market import BinanceMarket
 from hummingbot.market.bittrex.bittrex_market import BittrexMarket
+from hummingbot.market.dranite.dranite_market import DraniteMarket
 from hummingbot.market.coinbase_pro.coinbase_pro_market import CoinbaseProMarket
 from hummingbot.market.ddex.ddex_market import DDEXMarket
 from hummingbot.market.huobi.huobi_market import HuobiMarket
@@ -27,7 +28,8 @@ MARKETS = {
     "idex": IDEXMarket,
     "dolomite": DolomiteMarket,
     "huobi": HuobiMarket,
-    "bittrex": BittrexMarket
+    "bittrex": BittrexMarket,
+    "dranite": DraniteMarket
 }
 
 

@@ -33,7 +33,8 @@ EXCHANGES = {
     "idex",
     "radar_relay",
     "dolomite",
-    "bittrex"
+    "bittrex",
+    "dranite"
 }
 
 DEXES = {
@@ -55,7 +56,8 @@ EXAMPLE_PAIRS = {
     "coinbase_pro": "ETH-USDC",
     "dolomite": "WETH-DAI",
     "huobi": "ETH-USDT",
-    "bittrex": "ZRX-ETH"
+    "bittrex": "ZRX-ETH",
+    "dranite": "BTC-LTC"
 }
 
 EXAMPLE_ASSETS = {
@@ -67,7 +69,8 @@ EXAMPLE_ASSETS = {
     "coinbase_pro": "ETH",
     "huobi": "eth",
     "dolomite": "LRC",
-    "bittrex": "ZRX"
+    "bittrex": "ZRX",
+    "dranite": "LTC"
 }
 
 MAXIMUM_OUTPUT_PANE_LINE_COUNT = 1000

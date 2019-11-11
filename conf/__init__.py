@@ -61,6 +61,10 @@ dolomite_test_web3_address = os.getenv("DOLOMITE_TEST_ADDR")
 bittrex_api_key = os.getenv("BITTREX_API_KEY")
 bittrex_secret_key = os.getenv("BITTREX_SECRET_KEY")
 
+# Dranite Tests
+dranite_api_key = os.getenv("DRANITE_API_KEY")
+dranite_secret_key = os.getenv("DRANITE_SECRET_KEY")
+
 test_web3_provider_list = [os.getenv("WEB3_PROVIDER")]
 
 # Wallet Tests
