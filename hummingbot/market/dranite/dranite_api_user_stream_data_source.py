@@ -17,8 +17,8 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.market.dranite.dranite_order_book import DraniteOrderBook
 
-DRANITE_REST_URL = "https://api.pro.coinbase.com"
-DRANITE_WS_FEED = "wss://ws-feed.pro.coinbase.com"
+DRANITE_REST_URL = "http://localhost/api/v1"
+DRANITE_WS_FEED = "wss://k36bf8buki.execute-api.ap-southeast-1.amazonaws.com/v1"
 MAX_RETRIES = 20
 NaN = float("nan")
 
