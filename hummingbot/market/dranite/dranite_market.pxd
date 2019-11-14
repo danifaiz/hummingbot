@@ -5,7 +5,7 @@ from hummingbot.core.data_type.transaction_tracker cimport TransactionTracker
 cdef class DraniteMarket(MarketBase):
     cdef:
         object _user_stream_tracker
-        object _coinbase_auth
+        object _dranite_auth
         object _ev_loop
         object _poll_notifier
         double _last_timestamp
