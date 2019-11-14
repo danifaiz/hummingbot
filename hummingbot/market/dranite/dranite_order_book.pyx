@@ -53,9 +53,9 @@ cdef class DraniteOrderBook(OrderBook):
             msg.update(metadata)
         msg_ts = int(msg["ts"] * 1e-3)
         content = {
-            "symbol": msg["trading_pair"],
-            "trade_type": float(TradeType.SELL.value) if msg["direction"] == "buy" else float(TradeType.BUY.value),
-            "trade_id": msg["id"],
+            "symbol": metadata["symbol"],
+            "trade_type": "buy",
+            "trade_id": metadata["symbol"],
             "update_id": msg_ts,
             "amount": msg["amount"],
             "price": msg["price"]
@@ -71,38 +71,38 @@ cdef class DraniteOrderBook(OrderBook):
             msg.update(metadata)
         msg_ts = int(msg["ts"] * 1e-3)
         content = {
-            "symbol": msg["ch"].split(".")[1],
+            "symbol": metadata["symbol"],
             "update_id": msg_ts,
-            "bids": msg["tick"]["bids"],
-            "asks": msg["tick"]["asks"]
+            "bids": msg["bid"],
+            "asks": msg["ask"]
         }
         return OrderBookMessage(OrderBookMessageType.DIFF, content, timestamp or msg_ts)
 
     @classmethod
     def snapshot_message_from_db(cls, record: RowProxy, metadata: Optional[Dict] = None) -> OrderBookMessage:
         ts = record["timestamp"]
-        msg = record["json"] if type(record["json"])==dict else ujson.loads(record["json"])
+        msg = ujson.loads(record)
         if metadata:
             msg.update(metadata)
 
-        return OrderBookMessage(OrderBookMessageType.SNAPSHOT, {
-            "symbol": msg["ch"].split(".")[1],
+        return OrderBookMessage(OrderBookMessageType.SNAPSHOT, content = {
+            "symbol": metadata["symbol"],
             "update_id": int(ts),
-            "bids": msg["tick"]["bids"],
-            "asks": msg["tick"]["asks"]
+            "bids": msg["bid"],
+            "asks": msg["ask"]
         }, timestamp=ts * 1e-3)
 
     @classmethod
     def diff_message_from_db(cls, record: RowProxy, metadata: Optional[Dict] = None) -> OrderBookMessage:
         ts = record["timestamp"]
-        msg = record["json"] if type(record["json"])==dict else ujson.loads(record["json"])
+        msg = ujson.loads(record)
         if metadata:
             msg.update(metadata)
         return OrderBookMessage(OrderBookMessageType.DIFF, {
-            "symbol": msg["s"],
+            "symbol": metadata["symbol"],
             "update_id": int(ts),
-            "bids": msg["b"],
-            "asks": msg["a"]
+            "bids": msg["bid"],
+            "asks": msg["ask"]
         }, timestamp=ts * 1e-3)
 
     @classmethod
@@ -112,10 +112,10 @@ cdef class DraniteOrderBook(OrderBook):
         if metadata:
             msg.update(metadata)
         return OrderBookMessage(OrderBookMessageType.SNAPSHOT, {
-            "symbol": msg["ch"].split(".")[1],
-            "update_id": ts,
-            "bids": msg["tick"]["bids"],
-            "asks": msg["tick"]["asks"]
+            "symbol": metadata["symbol"],
+            "update_id": int(ts),
+            "bids": msg["bid"],
+            "asks": msg["ask"]
         }, timestamp=ts * 1e-3)
 
     @classmethod
@@ -126,10 +126,10 @@ cdef class DraniteOrderBook(OrderBook):
         if metadata:
             msg.update(metadata)
         return OrderBookMessage(OrderBookMessageType.DIFF, {
-            "symbol": msg["s"],
-            "update_id": ts,
-            "bids": msg["bids"],
-            "asks": msg["asks"]
+            "symbol": metadata["symbol"],
+            "update_id": int(ts),
+            "bids": msg["bid"],
+            "asks": msg["ask"]
         }, timestamp=ts * 1e-3)
 
     @classmethod
@@ -140,12 +140,12 @@ cdef class DraniteOrderBook(OrderBook):
         if metadata:
             msg.update(metadata)
         return OrderBookMessage(OrderBookMessageType.TRADE, {
-            "symbol": msg["ch"].split(".")[1],
-            "trade_type": float(TradeType.BUY.value) if data["direction"] == "sell" else float(TradeType.SELL.value),
-            "trade_id": ts,
-            "update_id": ts,
-            "price": data["price"],
-            "amount": data["amount"]
+            "symbol": metadata["symbol"],
+            "trade_type": "buy",
+            "trade_id": metadata["symbol"],
+            "update_id": int(ts),
+            "amount": msg["amount"],
+            "price": msg["price"]
         }, timestamp=ts * 1e-3)
 
     @classmethod

@@ -111,8 +111,8 @@ cdef class DraniteMarket(MarketBase):
     MARKET_SELL_ORDER_CREATED_EVENT_TAG = MarketEvent.SellOrderCreated.value
 
     DEPOSIT_TIMEOUT = 1800.0
-    API_CALL_TIMEOUT = 10.0
-    UPDATE_ORDERS_INTERVAL = 10.0
+    API_CALL_TIMEOUT = 30.0
+    UPDATE_ORDERS_INTERVAL = 30.0
 
     DRANITE_API_ENDPOINT = "http://localhost:8080/api/v1"
     DRANITE_API_ENDPOINT_TEMP = "http://localhost/api/v1"
@@ -154,7 +154,7 @@ cdef class DraniteMarket(MarketBase):
         self._user_stream_event_listener_task = None
         self._trading_rules_polling_task = None
         self._shared_client = None
-        self._account_info = self.account_info()
+        self._account_info = None
 
     @property
     def name(self) -> str:
@@ -264,8 +264,8 @@ cdef class DraniteMarket(MarketBase):
         if self._trading_required:
             self._status_polling_task = safe_ensure_future(self._status_polling_loop())
             self._trading_rules_polling_task = safe_ensure_future(self._trading_rules_polling_loop())
-            self._user_stream_tracker_task = safe_ensure_future(self._user_stream_tracker.start())
-            self._user_stream_event_listener_task = safe_ensure_future(self._user_stream_event_listener())
+            # self._user_stream_tracker_task = safe_ensure_future(self._user_stream_tracker.start())
+            # self._user_stream_event_listener_task = safe_ensure_future(self._user_stream_event_listener())
 
     def _stop_network(self):
         """
@@ -364,8 +364,9 @@ cdef class DraniteMarket(MarketBase):
         :returns: TradeFee class that includes fee percentage and flat fees
         """
         # GET here to get Taker and Maker Fee
-        accout_maker = self._accoutn_info["fees"][base_currency+"-"+quote_currency]["maker_fees"]
-        accout_taker = self._accoutn_info["fees"][base_currency+"-"+quote_currency]["taker_fees"]
+        self.fetch_account_info()
+        accout_maker = self._account_info["fees"][base_currency+"-"+quote_currency]["maker_fees"]
+        accout_taker = self._account_info["fees"][base_currency+"-"+quote_currency]["taker_fees"]
         cdef:
             object maker_fee = Decimal(accout_maker)
             object taker_fee = Decimal(accout_taker)
@@ -409,7 +410,7 @@ cdef class DraniteMarket(MarketBase):
             int64_t last_tick = <int64_t>(self._last_timestamp / 60.0)
             int64_t current_tick = <int64_t>(self._current_timestamp / 60.0)
         if current_tick > last_tick or len(self._trading_rules) <= 0:
-            product_info = await self._api_request("get", path_url="/products")
+            product_info = await self._api_request("get", path_url="/markets.json")
             trading_rules_list = self._format_trading_rules(product_info)
             self._trading_rules.clear()
             for trading_rule in trading_rules_list:
@@ -424,12 +425,12 @@ cdef class DraniteMarket(MarketBase):
             list retval = []
         for rule in raw_trading_rules:
             try:
-                symbol = rule.get("id")
+                symbol = rule.get("symbol")
                 retval.append(TradingRule(symbol,
-                                          min_price_increment=Decimal(rule.get("quote_increment")),
-                                          min_order_size=Decimal(rule.get("base_min_size")),
-                                          max_order_size=Decimal(rule.get("base_max_size")),
-                                          supports_market_orders=(not rule.get("limit_only"))))
+                                          min_price_increment=Decimal(rule.get("quoteIncrement")),
+                                          min_order_size=Decimal(rule.get("minTradeSize")),
+                                          max_order_size=Decimal(rule.get("maxTradeSize")),
+                                          supports_market_orders=(True)))
             except Exception:
                 self.logger().error(f"Error parsing the symbol rule {rule}. Skipping.", exc_info=True)
         return retval
@@ -683,22 +684,19 @@ cdef class DraniteMarket(MarketBase):
             "exchange": "dranite",
             "side": "buy" if is_buy else "sell",
             "type": "limit" if order_type is OrderType.LIMIT else "market",
-            "uid": "37"
+            "uid": "42"
         }
 
         order_result = await self._api_request("post", path_url=path_url, data=data)
         return order_result
 
-    async def account_info(self):
+    async def fetch_account_info(self):
         """
         Async wrapper for getting Account Taker and Maker Trade Fee
         :returns: json response from the API
         """
         path_url = "/account_infos"
-        data = {}
-
-        account_info = await self._api_request("get", path_url=path_url, data=data)
-        return account_info
+        self._account_info = self._api_request("get", path_url=path_url)
 
     async def execute_buy(self,
                           order_id: str,

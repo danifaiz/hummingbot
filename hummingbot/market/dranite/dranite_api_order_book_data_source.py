@@ -194,13 +194,19 @@ class DraniteAPIOrderBookDataSource(OrderBookTrackerDataSource):
                         if "order-book" in msg:
                             pass
                         elif "trades" in msg:
-                            pass
+                            for data in msg:
+                                trade_message: OrderBookMessage = DraniteOrderBook.trade_message_from_exchange(
+                                    data, metadata={"trading_pair": data["symbol"]}
+                                )
+                                output.put_nowait(trade_message)
                         elif "ticker" in msg:
                             pass
                         else:
                             self.logger().debug(f"Unrecognized message received from Dranite websocket: {msg}")
             except asyncio.CancelledError:
-                raise
+                # raise
+                self.logger().error("Could not Subscribe to Dranite trades Channel",
+                                    exc_info=True)
             except Exception:
                 self.logger().error("Unexpected error with WebSocket connection. Retrying after 30 seconds...",
                                     exc_info=True)

@@ -12,6 +12,7 @@ cdef class DraniteMarket(MarketBase):
         double _last_order_update_timestamp
         double _poll_interval
         dict _in_flight_orders
+        dict _account_info
         TransactionTracker _tx_tracker
         dict _trading_rules
         object _data_source_type

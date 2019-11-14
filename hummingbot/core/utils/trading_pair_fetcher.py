@@ -17,7 +17,7 @@ IDEX_REST_ENDPOINT = "https://api.idex.market/returnTicker"
 HUOBI_ENDPOINT = "https://api.huobi.pro/v1/common/symbols"
 BITTREX_ENDPOINT = "https://api.bittrex.com/v3/markets"
 DOLOMITE_ENDPOINT = "https://exchange-api.dolomite.io/v1/markets"
-DRANITE_ENDPOINT = "http://localhost:8080/api/v1/products.json"
+DRANITE_ENDPOINT = "http://localhost/api/v1/markets.json"
 API_CALL_TIMEOUT = 5
 
 
@@ -141,7 +141,7 @@ class TradingPairFetcher:
                 if response.status == 200:
                     try:
                         markets = await response.json()
-                        raw_trading_pairs: List[str] = list(map(lambda details: details.get('id'), markets))
+                        raw_trading_pairs: List[str] = list(map(lambda details: details.get('symbol'), markets))
                         return [DraniteMarket.convert_from_exchange_trading_pair(p) for p in raw_trading_pairs]
                     except Exception:
                         pass
