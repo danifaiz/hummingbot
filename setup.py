@@ -123,7 +123,7 @@ def main():
     setup(name="hummingbot",
           version=version,
           description="CoinAlpha Hummingbot",
-          url="https://github.com/danifaiz/hummingbot",
+          url="https://github.com/CoinAlpha/hummingbot",
           author="Martin Kou",
           author_email="martin@coinalpha.com",
           license="Proprietary",

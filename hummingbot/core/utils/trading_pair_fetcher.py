@@ -17,7 +17,7 @@ IDEX_REST_ENDPOINT = "https://api.idex.market/returnTicker"
 HUOBI_ENDPOINT = "https://api.huobi.pro/v1/common/symbols"
 BITTREX_ENDPOINT = "https://api.bittrex.com/v3/markets"
 DOLOMITE_ENDPOINT = "https://exchange-api.dolomite.io/v1/markets"
-
+DRANITE_ENDPOINT = "http://localhost:8080/api/v1/products.json"
 API_CALL_TIMEOUT = 5
 
 
@@ -133,6 +133,21 @@ class TradingPairFetcher:
                         # Do nothing if the request fails -- there will be no autocomplete for coinbase trading pairs
                 return []
 
+    async def fetch_dranite_trading_pairs() -> List[str]:
+        from hummingbot.market.dranite.dranite_market import DraniteMarket
+
+        async with aiohttp.ClientSession() as client:
+            async with client.get(DRANITE_ENDPOINT, timeout=API_CALL_TIMEOUT) as response:
+                if response.status == 200:
+                    try:
+                        markets = await response.json()
+                        raw_trading_pairs: List[str] = list(map(lambda details: details.get('id'), markets))
+                        return [DraniteMarket.convert_from_exchange_trading_pair(p) for p in raw_trading_pairs]
+                    except Exception:
+                        pass
+                        # Do nothing if the request fails -- there will be no autocomplete for coinbase trading pairs
+                return []
+
     @staticmethod
     async def fetch_idex_trading_pairs() -> List[str]:
         from hummingbot.market.idex.idex_market import IDEXMarket
@@ -211,6 +226,7 @@ class TradingPairFetcher:
         huobi_trading_pairs = await self.fetch_huobi_trading_pairs()
         idex_trading_pairs = await self.fetch_idex_trading_pairs()
         bittrex_trading_pairs = await self.fetch_bittrex_trading_pairs()
+        dranite_trading_pairs = await self.fetch_dranite_trading_pairs()
         self.trading_pairs = {
             "binance": binance_trading_pairs,
             "dolomite": dolomite_trading_pairs,
@@ -221,5 +237,6 @@ class TradingPairFetcher:
             "coinbase_pro": coinbase_pro_trading_pairs,
             "huobi": huobi_trading_pairs,
             "bittrex": bittrex_trading_pairs,
+            "dranite": dranite_trading_pairs,
         }
         self.ready = True

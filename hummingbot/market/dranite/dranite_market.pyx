@@ -52,7 +52,7 @@ from hummingbot.market.market_base import (
 )
 from hummingbot.market.trading_rule cimport TradingRule
 from hummingbot.market.dranite.dranite_in_flight_order import DraniteInFlightOrder
-from hummingbot.market.dranite.dranite_in_flight_order cimport DraniteInFlightOrder
+# from hummingbot.market.dranite.dranite_in_flight_order cimport DraniteInFlightOrder
 
 
 s_logger = None
