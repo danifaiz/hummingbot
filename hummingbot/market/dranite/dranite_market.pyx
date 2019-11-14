@@ -364,8 +364,8 @@ cdef class DraniteMarket(MarketBase):
         :returns: TradeFee class that includes fee percentage and flat fees
         """
         # GET here to get Taker and Maker Fee
-        accout_maker = self._accoutn_info["fees"][base_currency+"-"quote_currency]["maker_fees"]
-        accout_taker = self._accoutn_info["fees"][base_currency+"-"quote_currency]["taker_fees"]
+        accout_maker = self._accoutn_info["fees"][base_currency+"-"+quote_currency]["maker_fees"]
+        accout_taker = self._accoutn_info["fees"][base_currency+"-"+quote_currency]["taker_fees"]
         cdef:
             object maker_fee = Decimal(accout_maker)
             object taker_fee = Decimal(accout_taker)
@@ -689,12 +689,12 @@ cdef class DraniteMarket(MarketBase):
         order_result = await self._api_request("post", path_url=path_url, data=data)
         return order_result
 
-    async def account_info():
+    async def account_info(self):
         """
         Async wrapper for getting Account Taker and Maker Trade Fee
         :returns: json response from the API
         """
-        path_url = "/api/v1/account_infos"
+        path_url = "/account_infos"
         data = {}
 
         account_info = await self._api_request("get", path_url=path_url, data=data)
