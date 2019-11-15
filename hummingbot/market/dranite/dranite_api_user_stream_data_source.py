@@ -58,9 +58,8 @@ class DraniteAPIUserStreamDataSource(UserStreamTrackerDataSource):
         Subscribe to user stream via web socket, and keep the connection open for incoming messages
         :param ev_loop: ev_loop to execute this function in
         :param output: an async queue where the incoming messages are stored
-        # TODO Dranite Does not have currently this Websocket. Can be applied Later
+        # TODO Dranite Does not have currently this Channel. Can be applied Later
         """
-        pass
         while True:
             try:
                 async with websockets.connect(DRANITE_WS_FEED) as ws:

@@ -3,15 +3,21 @@
 import asyncio
 import logging
 import time
+import bisect
 from typing import (
     List,
-    Optional
+    Optional,
+    Deque
+)
+from collections import (
+    deque
 )
 
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import (
     OrderBookMessage,
-    OrderBookMessageType
+    OrderBookMessageType,
+    DraniteOrderBookMessage
 )
 from hummingbot.core.data_type.order_book_tracker import (
     OrderBookTracker,
@@ -20,7 +26,9 @@ from hummingbot.core.data_type.order_book_tracker import (
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
+from hummingbot.market.dranite.dranite_order_book import DraniteOrderBook
 from hummingbot.market.dranite.dranite_api_order_book_data_source import DraniteAPIOrderBookDataSource
+from hummingbot.market.dranite.dranite_active_order_tracker import DraniteActiveOrderTracker
 
 
 class DraniteOrderBookTracker(OrderBookTracker):
@@ -129,35 +137,61 @@ class DraniteOrderBookTracker(OrderBookTracker):
                 await asyncio.sleep(5.0)
 
     async def _track_single_book(self, symbol: str):
+        """
+        Update an order book with changes from the latest batch of received messages
+        """
+        past_diffs_window: Deque[DraniteOrderBookMessage] = deque()
+        self._past_diffs_windows[symbol] = past_diffs_window
+
         message_queue: asyncio.Queue = self._tracking_message_queues[symbol]
-        order_book: OrderBook = self._order_books[symbol]
+        order_book: DraniteOrderBook = self._order_books[symbol]
+        active_order_tracker: DraniteActiveOrderTracker = self._active_order_trackers[symbol]
+
         last_message_timestamp: float = time.time()
         diff_messages_accepted: int = 0
 
         while True:
             try:
-                message: OrderBookMessage = await message_queue.get()
+                message: DraniteOrderBookMessage = None
+                saved_messages: Deque[DraniteOrderBookMessage] = self._saved_message_queues[symbol]
+                # Process saved messages first if there are any
+                if len(saved_messages) > 0:
+                    message = saved_messages.popleft()
+                else:
+                    message = await message_queue.get()
+
                 if message.type is OrderBookMessageType.DIFF:
-                    # Dranite websocket messages contain the entire order book state so they should be treated as snapshots
-                    order_book.apply_snapshot(message.bids, message.asks, message.update_id)
+                    bids, asks = active_order_tracker.convert_diff_message_to_order_book_row(message)
+                    order_book.apply_diffs(bids, asks, message.update_id)
+                    past_diffs_window.append(message)
+                    while len(past_diffs_window) > self.PAST_DIFF_WINDOW_SIZE:
+                        past_diffs_window.popleft()
                     diff_messages_accepted += 1
 
                     # Output some statistics periodically.
                     now: float = time.time()
                     if int(now / 60.0) > int(last_message_timestamp / 60.0):
-                        self.logger().debug("Processed %d order book diffs for %s.",
-                                            diff_messages_accepted, symbol)
+                        self.logger().debug("Processed %d order book diffs for %s.", diff_messages_accepted, symbol)
                         diff_messages_accepted = 0
                     last_message_timestamp = now
                 elif message.type is OrderBookMessageType.SNAPSHOT:
-                    order_book.apply_snapshot(message.bids, message.asks, message.update_id)
+                    past_diffs: List[DraniteOrderBookMessage] = list(past_diffs_window)
+                    # only replay diffs later than snapshot, first update active order with snapshot then replay diffs
+                    replay_position = bisect.bisect_right(past_diffs, message)
+                    replay_diffs = past_diffs[replay_position:]
+                    s_bids, s_asks = active_order_tracker.convert_snapshot_message_to_order_book_row(message)
+                    order_book.apply_snapshot(s_bids, s_asks, message.update_id)
+                    for diff_message in replay_diffs:
+                        d_bids, d_asks = active_order_tracker.convert_diff_message_to_order_book_row(diff_message)
+                        order_book.apply_diffs(d_bids, d_asks, diff_message.update_id)
+
                     self.logger().debug("Processed order book snapshot for %s.", symbol)
             except asyncio.CancelledError:
                 raise
             except Exception:
                 self.logger().network(
-                    f"Unexpected error tracking order book for {symbol}.",
+                    f"Unexpected error processing order book messages for {symbol}.",
                     exc_info=True,
-                    app_warning_msg=f"Unexpected error tracking order book. Retrying after 5 seconds."
+                    app_warning_msg=f"Unexpected error processing order book messages. Retrying after 5 seconds."
                 )
                 await asyncio.sleep(5.0)
